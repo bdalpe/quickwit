@@ -21,6 +21,17 @@ jobs:
       run: |
         git clone --branch ${{ github.ref_name }} https://github.com/quickwit-oss/quickwit.git
 
+    - name: Set commit date, hash and tags
+      working-directory: quickwit
+      run: |
+        export QW_COMMIT_DATE=$(TZ=UTC0 git log -1 --format=%cd --date=format-local:'%Y-%m-%dT%H:%M:%SZ')
+        export QW_COMMIT_HASH=$(git rev-parse HEAD)
+        export QW_COMMIT_TAGS=$(git tag --points-at HEAD | tr '\n' ',')
+
+        echo "QW_COMMIT_DATE=${QW_COMMIT_DATE}" >> $GITHUB_ENV
+        echo "QW_COMMIT_HASH=${QW_COMMIT_HASH}" >> $GITHUB_ENV
+        echo "QW_COMMIT_TAGS=${QW_COMMIT_TAGS}" >> $GITHUB_ENV
+
     - name: Remove jemalloc from Cargo.toml
       working-directory: quickwit
       run: |
@@ -48,3 +59,7 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+        build-args: |
+          QW_COMMIT_DATE=${{ env.QW_COMMIT_DATE }}
+          QW_COMMIT_HASH=${{ env.QW_COMMIT_HASH }}
+          QW_COMMIT_TAGS=${{ env.QW_COMMIT_TAGS }}
